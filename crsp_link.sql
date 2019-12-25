@@ -10,12 +10,10 @@ WITH
 
 calls_combined AS (
     SELECT file_name, last_update,
-        COALESCE(b.company_name, a.company_name) AS company_name,
-        COALESCE(a.start_date, b.start_date) AS start_date,
-        COALESCE(b.company_ticker, a.company_ticker) AS company_ticker
-    FROM streetevents.calls AS a
-    FULL OUTER JOIN streetevents.calls_hbs AS b
-    USING (file_name, last_update)),
+        company_name,
+        start_date,
+        company_ticker
+    FROM streetevents.calls AS a),
 
 calls_combined_filtered AS (
     SELECT *
@@ -231,10 +229,6 @@ SELECT file_name, permno,
     regexp_replace(match_type_desc, '^([0-9]+).*', '\1')::int AS match_type,
     match_type_desc
 FROM all_matches
-WHERE (file_name, permno) NOT IN (
-    SELECT DISTINCT file_name, permno
-    FROM streetevents.bad_matches
-)
 ORDER BY file_name;
 
 ALTER TABLE streetevents.crsp_link OWNER TO streetevents;
