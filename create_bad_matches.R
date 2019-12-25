@@ -1,7 +1,5 @@
 library(dplyr, warn.conflicts = FALSE)
 library(RPostgreSQL)
-library(googlesheets)
-library(readr)
 
 pg <- dbConnect(PostgreSQL())
 calls <- tbl(pg, sql("SELECT * FROM streetevents.calls"))
