@@ -1,56 +1,54 @@
 library(googlesheets4)
 library(dplyr, warn.conflicts = FALSE)
+library(DBI)
 
 # You may need to run gs_auth() to set this up
 gs <- "14F6zjJQZRsf5PonOfZ0GJrYubvx5e_eHMV_hCGe42Qg"
-permnos <- read_sheet(gs, sheet = "manual_permno_matches")
 
 permnos_addl <-
-    read_sheet(gs, sheet = "match_repair.csv")
+    read_sheet(gs, sheet = "match_repair.csv") %>%
     filter(!same_permco) %>%
     select(file_name, permno, co_name) %>%
     mutate(comment = "Cases resolved using company names in 2017")
 
 permnos <-
     read_sheet(gs, sheet = "manual_permno_matches") %>%
-    union(permnos_addl)
+    select(file_name, permno, co_name, comment) %>%
+    union(permnos_addl) 
 
 pg_comment <- function(table, comment) {
-    library(RPostgreSQL)
-    pg <- dbConnect(PostgreSQL())
     sql <- paste0("COMMENT ON TABLE ", table, " IS '",
                   comment, " ON ", Sys.time() , "'")
-    rs <- dbGetQuery(pg, sql)
-    dbDisconnect(pg)
+    rs <- dbExecute(pg, sql)
 }
 
-library(RPostgreSQL)
-pg <- dbConnect(PostgreSQL())
+pg <- dbConnect(RPostgres::Postgres())
 
-rs <- dbWriteTable(pg, c("streetevents", "manual_permno_matches"),
+dbExecute(pg, "SET search_path TO streetevents")
+
+rs <- dbWriteTable(pg, "manual_permno_matches",
                    permnos,
                    overwrite=TRUE, row.names=FALSE)
 
-rs <- dbGetQuery(pg, "
-    ALTER TABLE streetevents.manual_permno_matches
-    OWNER TO streetevents_access")
+rs <- dbExecute(pg, "ALTER TABLE manual_permno_matches OWNER TO streetevents_access")
 
-rs <- dbGetQuery(pg,
-    "DELETE FROM streetevents.manual_permno_matches
+rs <- dbExecute(pg,
+    "DELETE FROM manual_permno_matches
     WHERE file_name IN (
         SELECT file_name
-        FROM streetevents.manual_permno_matches
+        FROM manual_permno_matches
         GROUP BY file_name
         HAVING count(DISTINCT permno)>1)
-            AND comment != 'Fix by Nastia/Vincent in January 2015';
+            AND comment != 'Fix by Nastia/Vincent in January 2015'")
 
-    CREATE INDEX ON streetevents.manual_permno_matches (file_name);
+rs <- dbExecute(pg, "CREATE INDEX ON manual_permno_matches (file_name)")
 
-    ALTER TABLE streetevents.manual_permno_matches OWNER TO streetevents;
+rs <- dbExecute(pg, "ALTER TABLE manual_permno_matches OWNER TO streetevents")
 
-    GRANT SELECT ON streetevents.manual_permno_matches TO streetevents_access;")
+rs <- dbExecute(pg, "GRANT SELECT ON manual_permno_matches TO streetevents_access")
+
+rs <- pg_comment("manual_permno_matches",
+                 paste0("CREATED USING import_manual_permno_matches.R ON ", Sys.time()))
 
 rs <- dbDisconnect(pg)
 
-rs <- pg_comment("streetevents.manual_permno_matches",
-           paste0("CREATED USING import_manual_permno_matches.R ON ", Sys.time()))
