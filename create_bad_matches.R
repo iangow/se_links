@@ -1,10 +1,11 @@
 library(dplyr, warn.conflicts = FALSE)
-library(RPostgreSQL)
+library(DBI)
+library(googlesheets4)
 
-pg <- dbConnect(PostgreSQL())
-calls <- tbl(pg, sql("SELECT * FROM streetevents.calls"))
-crsp_link <- tbl(pg, sql("SELECT * FROM streetevents.crsp_link"))
-bad_matches <- tbl(pg, sql("SELECT * FROM streetevents.bad_matches"))
+pg <- dbConnect(RPostgres::Postgres())
+rs <- dbExecute(pg, "SET search_path TO streetevents")
+calls <- tbl(pg, "calls")
+crsp_link <- tbl(pg, "crsp_link")
 
 regex <- "(?:Earnings(?: Conference Call)?|Financial and Operating Results|Financial Results Call|"
 regex <- paste0(regex, "Results Conference Call|Analyst Meeting)")
@@ -25,24 +26,21 @@ calls_mod <-
                by = "file_name") %>% 
     select(-match_type, - match_type_desc) %>% 
     distinct() %>% 
-    compute()
+    collect()
 
-name_checks <- 
-    gs_read(gs_key("1_RKRJah6iuUHC-y_kHP58Dl6UaptIhBNPRSyTjIjSSM"))
+name_checks <- read_sheet("1_RKRJah6iuUHC-y_kHP58Dl6UaptIhBNPRSyTjIjSSM")
 
-dbGetQuery(pg, "DROP TABLE IF EXISTS public.bad_matches")
+
+dbExecute(pg, "DROP TABLE IF EXISTS bad_matches")
 
 bad_matches <- 
     name_checks %>% 
-    filter(valid == FALSE) %>% 
-    inner_join(calls_mod, by = c("event_co_name", "permno"), copy = TRUE) %>% 
+    filter(!valid) %>% 
+    inner_join(calls_mod, by = c("event_co_name", "permno")) %>% 
     select(file_name, permno, valid, event_co_name, comnams, event_title) %>% 
-    union(bad_matches) %>% 
     copy_to(pg, ., name = 'bad_matches', temporary = FALSE)
 
-dbGetQuery(pg, "DROP TABLE IF EXISTS streetevents.bad_matches")
-dbGetQuery(pg, "ALTER TABLE public.bad_matches SET SCHEMA streetevents")
-dbGetQuery(pg, "ALTER TABLE streetevents.bad_matches OWNER TO streetevents")
-dbGetQuery(pg, "GRANT SELECT ON streetevents.bad_matches TO streetevents_access")
+dbExecute(pg, "ALTER TABLE .bad_matches OWNER TO streetevents")
+dbExecute(pg, "GRANT SELECT ON bad_matches TO streetevents_access")
 db_comment <- paste0("CREATED USING create_bad_matches.R ON ", Sys.time())
-dbGetQuery(pg, sprintf("COMMENT ON TABLE streetevents.bad_matches IS '%s';", db_comment))
+dbExecute(pg, sprintf("COMMENT ON TABLE bad_matches IS '%s';", db_comment))
