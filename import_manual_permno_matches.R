@@ -11,10 +11,24 @@ permnos_addl <-
     select(file_name, permno, co_name) %>%
     mutate(comment = "Cases resolved using company names in 2017")
 
+diff_permcos <- read_sheet(gs, sheet = "diff_permcos") 
+
+add_man_matches <-
+    diff_permcos %>%
+    filter(correct != 'DN') %>%
+    mutate(permno = case_when(correct == 'Y' ~ permno.y,
+                              correct == 'X' ~ permno.x,
+                              correct == 'Z' ~ permno.z,
+                              correct == 'NONE' ~ NA_real_),
+           co_name = NA_character_) %>%
+    select(file_name, permno, co_name) %>%
+    mutate(comment = "Cases resolved using company names in 2020")
+
 permnos <-
     read_sheet(gs, sheet = "manual_permno_matches") %>%
     select(file_name, permno, co_name, comment) %>%
-    union(permnos_addl) 
+    union(permnos_addl) %>%
+    union(add_man_matches)
 
 pg_comment <- function(table, comment) {
     sql <- paste0("COMMENT ON TABLE ", table, " IS '",
