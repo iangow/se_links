@@ -169,7 +169,7 @@ manual_matches_exe_id <- # 2610
 
 # Upload to pg ----
 dbGetQuery(pg, "DROP TABLE IF EXISTS public.executive_manual_matches")
-dbGetQuery(pg, "DROP TABLE IF EXISTS streetevents.executive_manual_matches")
+dbGetQuery(pg, "DROP TABLE IF EXISTS se_links.executive_manual_matches")
 executive_manual_matches_new <- 
     manual_matches_exe_id %>% 
     left_join(executive_manual_matches %>% 
@@ -181,11 +181,11 @@ executive_manual_matches_new <-
     distinct() %>% 
     compute(name = 'executive_manual_matches', temporary = FALSE)
 
-dbGetQuery(pg, "ALTER TABLE executive_manual_matches SET SCHEMA streetevents")
-dbGetQuery(pg, "ALTER TABLE streetevents.executive_manual_matches OWNER TO streetevents")
-dbGetQuery(pg, "GRANT SELECT ON streetevents.executive_manual_matches TO streetevents_access")
-db_comment <- paste0("CREATED USING iangow/streetevents_private/import_executive_manual_matches.R ON ", Sys.time(), ".")
-dbGetQuery(pg, sprintf("COMMENT ON TABLE streetevents.executive_manual_matches IS '%s';", db_comment))
+dbGetQuery(pg, "ALTER TABLE executive_manual_matches SET SCHEMA se_links")
+dbGetQuery(pg, "ALTER TABLE se_links.executive_manual_matches OWNER TO se_links")
+dbGetQuery(pg, "GRANT SELECT ON se_links.executive_manual_matches TO se_links_access")
+db_comment <- paste0("CREATED USING iangow/se_links/import_executive_manual_matches.R ON ", Sys.time(), ".")
+dbGetQuery(pg, sprintf("COMMENT ON TABLE se_links.executive_manual_matches IS '%s';", db_comment))
 
 # Check no match ----
 no_match <- # 621

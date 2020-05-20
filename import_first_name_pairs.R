@@ -10,15 +10,15 @@ first_name_pairs <-
     filter(valid) %>%
     select(fname_alt, first_name)
 
-dbGetQuery(pg, "DROP TABLE IF EXISTS streetevents.first_name_pairs")
+dbGetQuery(pg, "DROP TABLE IF EXISTS se_links.first_name_pairs")
 copy_to(pg, first_name_pairs, temporary = FALSE)
 
-dbGetQuery(pg, "ALTER TABLE first_name_pairs SET SCHEMA streetevents")
-dbGetQuery(pg, "ALTER TABLE streetevents.first_name_pairs OWNER TO streetevents")
-dbGetQuery(pg, "GRANT SELECT ON TABLE streetevents.first_name_pairs TO streetevents_access")
+dbGetQuery(pg, "ALTER TABLE first_name_pairs SET SCHEMA se_links")
+dbGetQuery(pg, "ALTER TABLE se_links.first_name_pairs OWNER TO se_links")
+dbGetQuery(pg, "GRANT SELECT ON TABLE se_links.first_name_pairs TO se_links_access")
 
 comment <- 'CREATED USING import_first_name_pairs.R'
-sql <- paste0("COMMENT ON TABLE streetevents.first_name_pairs IS '",
+sql <- paste0("COMMENT ON TABLE se_links.first_name_pairs IS '",
               comment, " ON ", Sys.time() , "'")
 rs <- dbGetQuery(pg, sql)
 dbDisconnect(pg)

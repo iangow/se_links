@@ -38,13 +38,13 @@ pg_comment <- function(table, comment) {
 
 pg <- dbConnect(RPostgres::Postgres())
 
-dbExecute(pg, "SET search_path TO streetevents")
+dbExecute(pg, "SET search_path TO se_links")
 
 rs <- dbWriteTable(pg, "manual_permno_matches",
                    permnos,
                    overwrite=TRUE, row.names=FALSE)
 
-rs <- dbExecute(pg, "ALTER TABLE manual_permno_matches OWNER TO streetevents_access")
+rs <- dbExecute(pg, "ALTER TABLE manual_permno_matches OWNER TO se_links_access")
 
 rs <- dbExecute(pg,
     "DELETE FROM manual_permno_matches
@@ -57,9 +57,9 @@ rs <- dbExecute(pg,
 
 rs <- dbExecute(pg, "CREATE INDEX ON manual_permno_matches (file_name)")
 
-rs <- dbExecute(pg, "ALTER TABLE manual_permno_matches OWNER TO streetevents")
+rs <- dbExecute(pg, "ALTER TABLE manual_permno_matches OWNER TO se_links")
 
-rs <- dbExecute(pg, "GRANT SELECT ON manual_permno_matches TO streetevents_access")
+rs <- dbExecute(pg, "GRANT SELECT ON manual_permno_matches TO se_links_access")
 
 rs <- pg_comment("manual_permno_matches",
                  paste0("CREATED USING import_manual_permno_matches.R ON ", Sys.time()))

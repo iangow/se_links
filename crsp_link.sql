@@ -1,11 +1,11 @@
 /*******************************
 OBJECTIVE: Match streetevents.calls with PERMNOs from crsp.stocknames
 *******************************/
-DROP VIEW IF EXISTS streetevents.company_link;
+DROP VIEW IF EXISTS se_links.company_link;
 
-DROP TABLE IF EXISTS streetevents.crsp_link;
+DROP TABLE IF EXISTS se_links.crsp_link;
 
-CREATE TABLE streetevents.crsp_link AS
+CREATE TABLE se_links.crsp_link AS
 WITH
 
 calls_combined AS (
@@ -34,14 +34,14 @@ earliest_calls_merged AS (
     USING (file_name, last_update)),
 
 calls AS (
-    SELECT streetevents.clean_tickers(company_ticker) AS ticker, file_name,
+    SELECT se_links.clean_tickers(company_ticker) AS ticker, file_name,
         company_name AS co_name, start_date::date AS call_date
     FROM earliest_calls_merged),
 
 manual_permno_matches AS (
     SELECT file_name, co_name, permno,
         '0. Manual matches'::text AS match_type_desc
-    FROM streetevents.manual_permno_matches),
+    FROM se_links.manual_permno_matches),
 
 match0 AS (
     SELECT DISTINCT a.file_name, a.ticker, COALESCE(b.co_name, a.co_name) AS co_name,
@@ -86,12 +86,12 @@ match2 AS (
     WHERE a.permno IS NULL),
 
 match3 AS (
-    SELECT DISTINCT file_name, streetevents.remove_trailing_q(a.ticker) AS ticker,
+    SELECT DISTINCT file_name, se_links.remove_trailing_q(a.ticker) AS ticker,
         co_name, call_date, b.permno,
         '3. #1 with trailing Q removed'::text AS match_type_desc
     FROM match2 AS a
     LEFT JOIN crsp.stocknames AS b
-    ON streetevents.remove_trailing_q(a.ticker)=b.ticker
+    ON se_links.remove_trailing_q(a.ticker)=b.ticker
         AND (a.call_date BETWEEN b.namedt AND b.nameenddt)
         AND difference(a.co_name, b.comnam) = 4
     WHERE a.permno IS NULL),
@@ -231,9 +231,9 @@ SELECT file_name, permno,
 FROM all_matches
 ORDER BY file_name;
 
-ALTER TABLE streetevents.crsp_link OWNER TO streetevents;
-GRANT SELECT ON streetevents.crsp_link TO streetevents_access;
+ALTER TABLE se_links.crsp_link OWNER TO se_links;
+GRANT SELECT ON se_links.crsp_link TO se_links_access;
 
-CREATE INDEX ON streetevents.crsp_link (file_name);
+CREATE INDEX ON se_links.crsp_link (file_name);
 
-CREATE VIEW streetevents.company_link AS SELECT * FROM streetevents.crsp_link;
+CREATE VIEW se_links.company_link AS SELECT * FROM se_links.crsp_link;

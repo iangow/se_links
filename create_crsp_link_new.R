@@ -3,7 +3,7 @@ library(DBI)
 
 pg <- dbConnect(RPostgres::Postgres())
 
-rs <- dbExecute(pg, "SET search_path TO streetevents")
+rs <- dbExecute(pg, "SET search_path TO se_links, streetevents")
 
 company_ids <- tbl(pg, "company_ids")
 calls <- tbl(pg, "calls")
@@ -29,8 +29,8 @@ crsp_link <-
     select(file_name, last_update, permno) %>%
     compute(name = "crsp_link_new", temporary = FALSE)
 
-rs <- dbExecute(pg, "ALTER TABLE crsp_link_new OWNER TO streetevents")
-rs <- dbExecute(pg, "GRANT SELECT ON crsp_link_new TO streetevents_access")
+rs <- dbExecute(pg, "ALTER TABLE crsp_link_new OWNER TO se_links")
+rs <- dbExecute(pg, "GRANT SELECT ON crsp_link_new TO se_links_access")
 
 rs <- dbExecute(pg, "CREATE INDEX ON crsp_link (file_name)")
 

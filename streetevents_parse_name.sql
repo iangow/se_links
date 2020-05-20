@@ -1,6 +1,6 @@
-﻿DROP FUNCTION IF EXISTS streetevents.parse_name(text);
+DROP FUNCTION IF EXISTS se_links.parse_name(text);
 
-CREATE OR REPLACE FUNCTION streetevents.parse_name(text)
+CREATE OR REPLACE FUNCTION se_links.parse_name(text)
   RETURNS parsed_name AS
 $BODY$
     # Reset variables
@@ -41,4 +41,4 @@ $BODY$
 
 $BODY$ LANGUAGE plperl;
 
-ALTER FUNCTION streetevents.parse_name(text) OWNER TO personality_access;
+ALTER FUNCTION se_links.parse_name(text) OWNER TO se_links;

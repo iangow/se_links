@@ -26,7 +26,7 @@ REMOVE FOREIGN (EXAMPLES):
 --DROP EXTENSION plperl CASCADE;
 -- CREATE EXTENSION plperl; --postgresql-plperl not installable
 
-CREATE OR REPLACE FUNCTION streetevents.clean_tickers (ticker text) RETURNS text AS
+CREATE OR REPLACE FUNCTION se_links.clean_tickers (ticker text) RETURNS text AS
 $BODY$
   # Remove any asterisks
   my $string = $_[0];
@@ -38,7 +38,7 @@ $BODY$
   return $string;
 $BODY$ LANGUAGE plperl IMMUTABLE STRICT COST 100;
 
-ALTER FUNCTION streetevents.clean_tickers(text) OWNER TO personality_access;
+ALTER FUNCTION se_links.clean_tickers(text) OWNER TO personality_access;
 
 /* Some tickers with ending Q causes non-matches. Examples:
     streetevents          --->  crsp.stocknames
@@ -51,7 +51,7 @@ ALTER FUNCTION streetevents.clean_tickers(text) OWNER TO personality_access;
 */
 SET work_mem='15GB';
 
-CREATE OR REPLACE FUNCTION streetevents.remove_trailing_q (ticker text)
+CREATE OR REPLACE FUNCTION se_links.remove_trailing_q (ticker text)
 RETURNS text AS
 $BODY$
   # Remove trailing Qs
@@ -61,4 +61,4 @@ $BODY$
   return $string;
 $BODY$ LANGUAGE plperl IMMUTABLE STRICT COST 100;
 
-ALTER FUNCTION streetevents.remove_trailing_q(text) OWNER TO personality_access;
+ALTER FUNCTION se_links.remove_trailing_q(text) OWNER TO se_links;
